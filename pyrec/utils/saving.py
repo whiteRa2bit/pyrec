@@ -7,7 +7,8 @@ def remove_default_values(graph_def):
         op_def = op_defs[node_def.op]
         attrs_to_strip = set()
         for attr_name, attr_value in node_def.attr.items():
-            if meta_graph._is_default_attr_value(op_def, attr_name, attr_value):
+            if meta_graph._is_default_attr_value(op_def, attr_name,
+                                                 attr_value):
                 attrs_to_strip.add(attr_name)
         for attr in attrs_to_strip:
             del node_def.attr[attr]
@@ -20,7 +21,8 @@ def remove_default_values(graph_def):
             strip_node_default_valued_attrs(node_def, op_defs)
 
 
-def save_frozen(checkpoint_dir, meta_graph_fname, output_graph_fname, output_node_names):
+def save_frozen(checkpoint_dir, meta_graph_fname, output_graph_fname,
+                output_node_names):
     saver = tf.train.import_meta_graph(meta_graph_fname, clear_devices=True)
 
     def restore_fn(session):
@@ -38,7 +40,8 @@ def save_frozen(checkpoint_dir, meta_graph_fname, output_graph_fname, output_nod
         # We use a built-in TF helper to export variables to constants
         output_graph_def = tf.graph_util.convert_variables_to_constants(
             session,  # The session is used to retrieve the weights
-            tf.get_default_graph().as_graph_def(),  # The graph_def is used to retrieve the nodes
+            tf.get_default_graph()
+            .as_graph_def(),  # The graph_def is used to retrieve the nodes
             output_node_names  # The output node names are used to select the usefull nodes
         )
 
