@@ -60,3 +60,30 @@ class Reduce(Operation):
                 yield from self.reducer(tuple(self.keys), group_rows)
         else:
             yield from self.reducer(tuple(self.keys), rows)
+
+
+class Joiner(ABC):
+    """Base class for joiners"""
+
+    def __init__(self, suffix_a: str = '_1', suffix_b: str = '_2') -> None:
+        self._a_suffix = suffix_a
+        self._b_suffix = suffix_b
+
+    @abstractmethod
+    def __call__(self, keys: tp.Sequence[str], rows_a: TRowsIterable, rows_b: TRowsIterable) -> TRowsGenerator:
+        """
+        :param keys: join keys
+        :param rows_a: left table rows
+        :param rows_b: right table rows
+        """
+        pass
+
+    def update(self, dict_a: TRow, dict_b: TRow, keys: tp.Sequence[str]) -> None:
+        for key, val_b in dict_b.items():
+            if key in dict_a and key not in keys:
+                val_a = dict_a[key]
+                del dict_a[key]
+                dict_a['{}{}'.format(key, self._a_suffix)] = val_a
+                dict_a['{}{}'.format(key, self._b_suffix)] = val_b
+            else:
+                dict_a[key] = val_b
