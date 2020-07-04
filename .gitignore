@@ -1,4 +1,5 @@
 # Custom ignore files
+setyapf.sh
 source_data/
 checkpoints/
 
