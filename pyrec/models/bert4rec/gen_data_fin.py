@@ -266,10 +266,7 @@ def mask_last(all_documents, user, max_seq_length, short_seq_prob, masked_lm_pro
 
         (tokens, masked_lm_positions, masked_lm_labels) = create_masked_lm_predictions_force_last(tokens)
         instance = TrainingInstance(
-            info=info,
-            tokens=tokens,
-            masked_lm_positions=masked_lm_positions,
-            masked_lm_labels=masked_lm_labels)
+            info=info, tokens=tokens, masked_lm_positions=masked_lm_positions, masked_lm_labels=masked_lm_labels)
         instances.append(instance)
 
     return instances
@@ -285,8 +282,7 @@ def create_instances_from_document_test(all_documents, vocab, rng, user, max_seq
     tokens = document[0]
     assert len(tokens) >= 1
 
-    (tokens, masked_lm_positions,
-     masked_lm_labels) = create_masked_lm_predictions_force_last(tokens)
+    tokens, masked_lm_positions, masked_lm_labels = create_masked_lm_predictions_force_last(tokens)
 
     info = [int(user.split("_")[1])]
 
@@ -295,8 +291,7 @@ def create_instances_from_document_test(all_documents, vocab, rng, user, max_seq
         tokens=tokens,
         masked_lm_positions=masked_lm_positions,
         masked_lm_labels=masked_lm_labels,
-        bst_target=1
-    )
+        bst_target=1)
 
     negative_instance = TrainingInstance(
         info=info,
@@ -312,9 +307,8 @@ def create_instances_from_document_test(all_documents, vocab, rng, user, max_seq
         return [positive_instance]
 
 
-def create_instances_from_document_train(
-        all_documents, user, max_seq_length, short_seq_prob, masked_lm_prob,
-        max_predictions_per_seq, vocab, rng, mask_prob):
+def create_instances_from_document_train(all_documents, user, max_seq_length, short_seq_prob, masked_lm_prob,
+                                         max_predictions_per_seq, vocab, rng, mask_prob):
     """Creates `TrainingInstance`s for a single document."""
     document = all_documents[user]
 
@@ -327,22 +321,16 @@ def create_instances_from_document_train(
     for tokens in document:
         assert 1 <= len(tokens) <= max_num_tokens
 
-        (tokens, masked_lm_positions,
-         masked_lm_labels) = create_masked_lm_predictions(
-            tokens, masked_lm_prob, max_predictions_per_seq,
-            vocab_items, rng, mask_prob)
+        tokens, masked_lm_positions, masked_lm_labels = create_masked_lm_predictions(
+            tokens, masked_lm_prob, max_predictions_per_seq, vocab_items, rng, mask_prob)
         instance = TrainingInstance(
-            info=info,
-            tokens=tokens,
-            masked_lm_positions=masked_lm_positions,
-            masked_lm_labels=masked_lm_labels)
+            info=info, tokens=tokens, masked_lm_positions=masked_lm_positions, masked_lm_labels=masked_lm_labels)
         instances.append(instance)
 
     return instances
 
 
-MaskedLmInstance = collections.namedtuple("MaskedLmInstance",
-                                          ["index", "label"])
+MaskedLmInstance = collections.namedtuple("MaskedLmInstance", ["index", "label"])
 
 
 def create_masked_lm_predictions_force_last(tokens):
@@ -362,12 +350,10 @@ def create_masked_lm_predictions_force_last(tokens):
     masked_lm_positions = [last_index]
     masked_lm_labels = [tokens[last_index]]
 
-    return (output_tokens, masked_lm_positions, masked_lm_labels)
+    return output_tokens, masked_lm_positions, masked_lm_labels
 
 
-def create_masked_lm_predictions(tokens, masked_lm_prob,
-                                 max_predictions_per_seq, vocab_words, rng,
-                                 mask_prob):
+def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng, mask_prob):
     """Creates the predictions for the masked LM objective."""
 
     cand_indexes = []
@@ -380,8 +366,7 @@ def create_masked_lm_predictions(tokens, masked_lm_prob,
 
     output_tokens = list(tokens)
 
-    num_to_predict = min(max_predictions_per_seq,
-                         max(1, int(round(len(tokens) * masked_lm_prob))))
+    num_to_predict = min(max_predictions_per_seq, max(1, int(round(len(tokens) * masked_lm_prob))))
 
     masked_lms = []
     covered_indexes = set()
@@ -445,10 +430,9 @@ def gen_samples(data,
 
         return train_instances, test_instances
 
-    instances = create_training_instances(
-        data, max_seq_length, dupe_factor, short_seq_prob, masked_lm_prob,
-        max_predictions_per_seq, rng, vocab, mask_prob, prop_sliding_window,
-        pool_size, force_last)
+    instances = create_training_instances(data, max_seq_length, dupe_factor, short_seq_prob, masked_lm_prob,
+                                          max_predictions_per_seq, rng, vocab, mask_prob, prop_sliding_window,
+                                          pool_size, force_last)
 
     tf.logging.info("*** Writing to output files ***")
     tf.logging.info("  %s", output_filename)
@@ -458,15 +442,12 @@ def gen_samples(data,
         train_output_filename = output_filename + '.train.tfrecord'
         test_output_filename = output_filename + '.test.tfrecord'
 
-        write_instance_to_example_files(train_instances, max_seq_length,
-                                        max_predictions_per_seq, vocab,
+        write_instance_to_example_files(train_instances, max_seq_length, max_predictions_per_seq, vocab,
                                         [train_output_filename])
-        write_instance_to_example_files(test_instances, max_seq_length,
-                                        max_predictions_per_seq, vocab,
+        write_instance_to_example_files(test_instances, max_seq_length, max_predictions_per_seq, vocab,
                                         [test_output_filename])
     else:
-        write_instance_to_example_files(instances, max_seq_length,
-                                        max_predictions_per_seq, vocab,
+        write_instance_to_example_files(instances, max_seq_length, max_predictions_per_seq, vocab,
                                         [output_filename])
 
 
@@ -503,8 +484,8 @@ def main():
 
     print('average sequence length: %.2f' % (cc / len(user_train)))
     print('max:{}, min:{}'.format(max_len, min_len))
-    print('len_train:{}, len_valid:{}, len_test:{}, usernum:{}, itemnum:{}'.
-          format(len(user_train), len(user_valid), len(user_test), usernum, itemnum))
+    print('len_train:{}, len_valid:{}, len_test:{}, usernum:{}, itemnum:{}'.format(
+        len(user_train), len(user_valid), len(user_test), usernum, itemnum))
 
     for idx, u in enumerate(user_train):
         if idx < 10:
@@ -520,16 +501,12 @@ def main():
     rng = random.Random(random_seed)
 
     user_full_data = {
-        'user_' + str(u):
-            ['item_' + str(item) for item in (user_train[u] + user_test[u])]
-        for u in user_train if len(user_train[u]) > 0 and len(user_test[u]) > 0
+        'user_' + str(u): ['item_' + str(item) for item in (user_train[u] + user_test[u])
+                           ] for u in user_train if len(user_train[u]) > 0 and len(user_test[u]) > 0
     }
 
     vocab = FreqVocab(user_full_data)
-    user_full_data_output = {
-        k: [vocab.convert_tokens_to_ids(v)]
-        for k, v in user_full_data.items()
-    }
+    user_full_data_output = {k: [vocab.convert_tokens_to_ids(v)] for k, v in user_full_data.items()}
 
     if FLAGS.use_bst:
         print('begin to generate data')
@@ -550,8 +527,7 @@ def main():
             force_last=True)
     else:
         user_train_data = {
-            'user_' + str(k): ['item_' + str(item) for item in v]
-            for k, v in user_train.items() if len(v) > 0
+            'user_' + str(k): ['item_' + str(item) for item in v] for k, v in user_train.items() if len(v) > 0
         }
 
         print('begin to generate train')
@@ -590,11 +566,9 @@ def main():
             force_last=True)
         print('test:{}'.format(output_filename))
 
-    print('vocab_size:{}, user_size:{}, item_size:{}, item_with_other_size:{}'.
-          format(vocab.get_vocab_size(),
-                 vocab.get_user_count(),
-                 vocab.get_item_count(),
-                 vocab.get_item_count() + vocab.get_special_token_count()))
+    print('vocab_size:{}, user_size:{}, item_size:{}, item_with_other_size:{}'.format(
+        vocab.get_vocab_size(), vocab.get_user_count(), vocab.get_item_count(),
+        vocab.get_item_count() + vocab.get_special_token_count()))
     vocab_file_name = output_dir + dataset_name + version_id + '.vocab'
     print('vocab pickle file: ' + vocab_file_name)
     with open(vocab_file_name, 'wb') as output_file:
