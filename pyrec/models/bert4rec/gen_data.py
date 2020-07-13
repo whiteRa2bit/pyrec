@@ -18,36 +18,14 @@ flags = tf.flags
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string("signature", 'default', "signature_name")
-
-flags.DEFINE_integer(
-    "max_seq_length", 200,
-    "max sequence length.")
-
-flags.DEFINE_integer(
-    "max_predictions_per_seq", 20,
-    "max_predictions_per_seq.")
-
-flags.DEFINE_float(
-    "masked_lm_prob", 0.15,
-    "Masked LM probability.")
-
-flags.DEFINE_float(
-    "mask_prob", 1.0,
-    "mask probabaility")
-
-flags.DEFINE_integer(
-    "dupe_factor", 10,
-    "Number of times to duplicate the input data (with different masks).")
-
+flags.DEFINE_integer("max_seq_length", 200, "max sequence length.")
+flags.DEFINE_integer("max_predictions_per_seq", 20, "max_predictions_per_seq.")
+flags.DEFINE_float("masked_lm_prob", 0.15, "Masked LM probability.")
+flags.DEFINE_float("mask_prob", 1.0, "mask probabaility")
+flags.DEFINE_integer("dupe_factor", 10, "Number of times to duplicate the input data (with different masks).")
 flags.DEFINE_float("prop_sliding_window", 0.1, "sliding window step size.")
-
-flags.DEFINE_string(
-    "data_dir", './data/',
-    "data dir.")
-
-flags.DEFINE_string(
-    "dataset_name", 'ml-1m',
-    "dataset name.")
+flags.DEFINE_string("data_dir", './data/', "data dir.")
+flags.DEFINE_string("dataset_name", 'ml-1m', "dataset name.")
 
 
 def printable_text(text):
@@ -91,12 +69,9 @@ class TrainingInstance(object):
     def __str__(self):
         s = ""
         s += "info: %s\n" % (" ".join([printable_text(x) for x in self.info]))
-        s += "tokens: %s\n" % (
-            " ".join([printable_text(x) for x in self.tokens]))
-        s += "masked_lm_positions: %s\n" % (
-            " ".join([str(x) for x in self.masked_lm_positions]))
-        s += "masked_lm_labels: %s\n" % (
-            " ".join([printable_text(x) for x in self.masked_lm_labels]))
+        s += "tokens: %s\n" % (" ".join([printable_text(x) for x in self.tokens]))
+        s += "masked_lm_positions: %s\n" % (" ".join([str(x) for x in self.masked_lm_positions]))
+        s += "masked_lm_labels: %s\n" % (" ".join([printable_text(x) for x in self.masked_lm_labels]))
         s += "\n"
         return s
 
@@ -104,9 +79,7 @@ class TrainingInstance(object):
         return self.__str__()
 
 
-def write_instance_to_example_files(instances, max_seq_length,
-                                    max_predictions_per_seq, vocab,
-                                    output_files):
+def write_instance_to_example_files(instances, max_seq_length, max_predictions_per_seq, vocab, output_files):
     """Create TF example files from `TrainingInstance`s."""
     writers = []
     for output_file in output_files:
@@ -143,13 +116,11 @@ def write_instance_to_example_files(instances, max_seq_length,
         features["info"] = create_int_feature(instance.info)
         features["input_ids"] = create_int_feature(input_ids)
         features["input_mask"] = create_int_feature(input_mask)
-        features["masked_lm_positions"] = create_int_feature(
-            masked_lm_positions)
+        features["masked_lm_positions"] = create_int_feature(masked_lm_positions)
         features["masked_lm_ids"] = create_int_feature(masked_lm_ids)
         features["masked_lm_weights"] = create_float_feature(masked_lm_weights)
 
-        tf_example = tf.train.Example(
-            features=tf.train.Features(feature=features))
+        tf_example = tf.train.Example(features=tf.train.Features(feature=features))
 
         writers[writer_index].write(tf_example.SerializeToString())
         writer_index = (writer_index + 1) % len(writers)
@@ -158,8 +129,7 @@ def write_instance_to_example_files(instances, max_seq_length,
 
         if inst_index < 20:
             tf.logging.info("*** Example ***")
-            tf.logging.info("tokens: %s" % " ".join(
-                [printable_text(x) for x in instance.tokens]))
+            tf.logging.info("tokens: %s" % " ".join([printable_text(x) for x in instance.tokens]))
 
             for feature_name in features.keys():
                 feature = features[feature_name]
@@ -168,9 +138,7 @@ def write_instance_to_example_files(instances, max_seq_length,
                     values = feature.int64_list.value
                 elif feature.float_list.value:
                     values = feature.float_list.value
-                tf.logging.info("%s: %s" % (feature_name,
-                                            " ".join([str(x)
-                                                      for x in values])))
+                tf.logging.info("%s: %s" % (feature_name, " ".join([str(x) for x in values])))
 
     for writer in writers:
         writer.close()
@@ -179,14 +147,12 @@ def write_instance_to_example_files(instances, max_seq_length,
 
 
 def create_int_feature(values):
-    feature = tf.train.Feature(
-        int64_list=tf.train.Int64List(value=list(values)))
+    feature = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
     return feature
 
 
 def create_float_feature(values):
-    feature = tf.train.Feature(
-        float_list=tf.train.FloatList(value=list(values)))
+    feature = tf.train.Feature(float_list=tf.train.FloatList(value=list(values)))
     return feature
 
 
@@ -216,23 +182,20 @@ def create_training_instances(all_documents_raw,
     else:
         max_num_tokens = max_seq_length  # we need two sentence
 
-        sliding_step = (int)(
-            prop_sliding_window *
-            max_num_tokens) if prop_sliding_window != -1.0 else max_num_tokens
+        sliding_step = int(prop_sliding_window * max_num_tokens) if prop_sliding_window != -1.0 else max_num_tokens
 
         for user, item_seq in all_documents_raw.items():
             if len(item_seq) == 0:
                 print("got empty seq:" + user)
                 continue
 
+
 #             if len(item_seq) <= max_num_tokens:
 #                 all_documents[user] = [item_seq]
 #             else:
-            beg_idx = range(len(item_seq)-max_num_tokens, 0, -sliding_step)
+            beg_idx = range(len(item_seq) - max_num_tokens, 0, -sliding_step)
             beg_idx.append(0)
-            all_documents[user] = [
-                item_seq[i:i + max_num_tokens] for i in beg_idx[::-1]
-            ]
+            all_documents[user] = [item_seq[i:i + max_num_tokens] for i in beg_idx[::-1]]
 
     # Remove empty documents
     # rng.shuffle(all_documents)
@@ -241,9 +204,8 @@ def create_training_instances(all_documents_raw,
     if force_last:
         for user in all_documents:
             instances.extend(
-                create_instances_from_document_force_last(
-                    all_documents, user, max_seq_length, short_seq_prob,
-                    masked_lm_prob, max_predictions_per_seq, vocab, rng))
+                create_instances_from_document_force_last(all_documents, user, max_seq_length, short_seq_prob,
+                                                          masked_lm_prob, max_predictions_per_seq, vocab, rng))
         print("num of instance:{}".format(len(instances)))
     else:
         cnt = 0
@@ -255,18 +217,16 @@ def create_training_instances(all_documents_raw,
                     tf.logging.info("Writing example %d of %d" % (cnt, tot_cnt))
 
                 instances.extend(
-                    create_instances_from_document_force_no_b(
-                        all_documents, user, max_seq_length, short_seq_prob,
-                        masked_lm_prob, max_predictions_per_seq, vocab, rng,
-                        mask_prob))
+                    create_instances_from_document_force_no_b(all_documents, user, max_seq_length, short_seq_prob,
+                                                              masked_lm_prob, max_predictions_per_seq, vocab, rng,
+                                                              mask_prob))
         print("num of instance:{}".format(len(instances)))
     rng.shuffle(instances)
     return instances
 
 
-def create_instances_from_document_force_last(
-        all_documents, user, max_seq_length, short_seq_prob, masked_lm_prob,
-        max_predictions_per_seq, vocab, rng):
+def create_instances_from_document_force_last(all_documents, user, max_seq_length, short_seq_prob, masked_lm_prob,
+                                              max_predictions_per_seq, vocab, rng):
     """Creates `TrainingInstance`s for a single document."""
     document = all_documents[user]
 
@@ -282,22 +242,17 @@ def create_instances_from_document_force_last(
     for token in tokens_a:
         tokens.append(token)
 
-    (tokens, masked_lm_positions,
-     masked_lm_labels) = create_masked_lm_predictions_force_last(tokens)
+    (tokens, masked_lm_positions, masked_lm_labels) = create_masked_lm_predictions_force_last(tokens)
 
     info = [int(user.split("_")[1])]
     instance = TrainingInstance(
-        info=info,
-        tokens=tokens,
-        masked_lm_positions=masked_lm_positions,
-        masked_lm_labels=masked_lm_labels)
+        info=info, tokens=tokens, masked_lm_positions=masked_lm_positions, masked_lm_labels=masked_lm_labels)
 
     return [instance]
 
 
-def create_instances_from_document_force_no_b(
-        all_documents, user, max_seq_length, short_seq_prob, masked_lm_prob,
-        max_predictions_per_seq, vocab, rng, mask_prob):
+def create_instances_from_document_force_no_b(all_documents, user, max_seq_length, short_seq_prob, masked_lm_prob,
+                                              max_predictions_per_seq, vocab, rng, mask_prob):
     """Creates `TrainingInstance`s for a single document."""
     document = all_documents[user]
     # Account for [CLS], [SEP], [SEP]
@@ -309,24 +264,18 @@ def create_instances_from_document_force_no_b(
     vocab_items = vocab.get_items()
 
     for tokens in document:
-        assert len(tokens) >= 1 and len(tokens) <= max_num_tokens
+        assert 1 <= len(tokens) <= max_num_tokens
 
-        (tokens, masked_lm_positions,
-         masked_lm_labels) = create_masked_lm_predictions(
-             tokens, masked_lm_prob, max_predictions_per_seq,
-             vocab_items, rng, mask_prob)
+        tokens, masked_lm_positions, masked_lm_labels = create_masked_lm_predictions(
+            tokens, masked_lm_prob, max_predictions_per_seq, vocab_items, rng, mask_prob)
         instance = TrainingInstance(
-            info=info,
-            tokens=tokens,
-            masked_lm_positions=masked_lm_positions,
-            masked_lm_labels=masked_lm_labels)
+            info=info, tokens=tokens, masked_lm_positions=masked_lm_positions, masked_lm_labels=masked_lm_labels)
         instances.append(instance)
 
     return instances
 
 
-MaskedLmInstance = collections.namedtuple("MaskedLmInstance",
-                                          ["index", "label"])
+MaskedLmInstance = collections.namedtuple("MaskedLmInstance", ["index", "label"])
 
 
 def create_masked_lm_predictions_force_last(tokens):
@@ -346,12 +295,10 @@ def create_masked_lm_predictions_force_last(tokens):
     masked_lm_positions = [last_index]
     masked_lm_labels = [tokens[last_index]]
 
-    return (output_tokens, masked_lm_positions, masked_lm_labels)
+    return output_tokens, masked_lm_positions, masked_lm_labels
 
 
-def create_masked_lm_predictions(tokens, masked_lm_prob,
-                                 max_predictions_per_seq, vocab_words, rng,
-                                 mask_prob):
+def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng, mask_prob):
     """Creates the predictions for the masked LM objective."""
 
     cand_indexes = []
@@ -364,8 +311,7 @@ def create_masked_lm_predictions(tokens, masked_lm_prob,
 
     output_tokens = list(tokens)
 
-    num_to_predict = min(max_predictions_per_seq,
-                         max(1, int(round(len(tokens) * masked_lm_prob))))
+    num_to_predict = min(max_predictions_per_seq, max(1, int(round(len(tokens) * masked_lm_prob))))
 
     masked_lms = []
     covered_indexes = set()
@@ -435,17 +381,14 @@ def gen_samples(data,
                 prop_sliding_window,
                 force_last=False):
     # create train
-    instances = create_training_instances(
-        data, max_seq_length, dupe_factor, short_seq_prob, masked_lm_prob,
-        max_predictions_per_seq, rng, vocab, mask_prob, prop_sliding_window,
-        force_last)
+    instances = create_training_instances(data, max_seq_length, dupe_factor, short_seq_prob, masked_lm_prob,
+                                          max_predictions_per_seq, rng, vocab, mask_prob, prop_sliding_window,
+                                          force_last)
 
     tf.logging.info("*** Writing to output files ***")
     tf.logging.info("  %s", output_filename)
 
-    write_instance_to_example_files(instances, max_seq_length,
-                                    max_predictions_per_seq, vocab,
-                                    [output_filename])
+    write_instance_to_example_files(instances, max_seq_length, max_predictions_per_seq, vocab, [output_filename])
 
 
 def main():
@@ -468,7 +411,7 @@ def main():
         print(os.getcwd())
         exit(1)
 
-    dataset = data_partition(output_dir+dataset_name+'.txt')
+    dataset = data_partition(output_dir + dataset_name + '.txt')
     [user_train, user_valid, user_test, usernum, itemnum] = dataset
     cc = 0.0
     max_len = 0
@@ -481,10 +424,8 @@ def main():
     print('average sequence length: %.2f' % (cc / len(user_train)))
     print('max:{}, min:{}'.format(max_len, min_len))
 
-    print('len_train:{}, len_valid:{}, len_test:{}, usernum:{}, itemnum:{}'.
-          format(
-              len(user_train),
-              len(user_valid), len(user_test), usernum, itemnum))
+    print('len_train:{}, len_valid:{}, len_test:{}, usernum:{}, itemnum:{}'.format(
+        len(user_train), len(user_valid), len(user_test), usernum, itemnum))
 
     for idx, u in enumerate(user_train):
         if idx < 10:
@@ -499,21 +440,16 @@ def main():
 
     # get the max index of the data
     user_train_data = {
-        'user_' + str(k): ['item_' + str(item) for item in v]
-        for k, v in user_train.items() if len(v) > 0
+        'user_' + str(k): ['item_' + str(item) for item in v] for k, v in user_train.items() if len(v) > 0
     }
     user_test_data = {
-        'user_' + str(u):
-        ['item_' + str(item) for item in (user_train[u] + user_test[u])]
-        for u in user_train if len(user_train[u]) > 0 and len(user_test[u]) > 0
+        'user_' + str(u): ['item_' + str(item) for item in (user_train[u] + user_test[u])
+                          ] for u in user_train if len(user_train[u]) > 0 and len(user_test[u]) > 0
     }
     rng = random.Random(random_seed)
 
     vocab = FreqVocab(user_test_data)
-    user_test_data_output = {
-        k: [vocab.convert_tokens_to_ids(v)]
-        for k, v in user_test_data.items()
-    }
+    user_test_data_output = {k: [vocab.convert_tokens_to_ids(v)] for k, v in user_test_data.items()}
 
     print('begin to generate train')
     output_filename = output_dir + dataset_name + version_id + '.train.tfrecord'
@@ -549,11 +485,9 @@ def main():
         force_last=True)
     print('test:{}'.format(output_filename))
 
-    print('vocab_size:{}, user_size:{}, item_size:{}, item_with_other_size:{}'.
-          format(vocab.get_vocab_size(),
-                 vocab.get_user_count(),
-                 vocab.get_item_count(),
-                 vocab.get_item_count() + vocab.get_special_token_count()))
+    print('vocab_size:{}, user_size:{}, item_size:{}, item_with_other_size:{}'.format(
+        vocab.get_vocab_size(), vocab.get_user_count(), vocab.get_item_count(),
+        vocab.get_item_count() + vocab.get_special_token_count()))
     vocab_file_name = output_dir + dataset_name + version_id + '.vocab'
     print('vocab pickle file: ' + vocab_file_name)
     with open(vocab_file_name, 'wb') as output_file:
